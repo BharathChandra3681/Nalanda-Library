@@ -3,40 +3,53 @@ const cors = require('cors');
 const helmet = require('helmet');
 const connectDB = require('./config/db');
 const config = require('./config/env');
+const routes = require('./routes');
+const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
 
-// Middleware
+// Security middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     message: 'Nalanda Library API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
+// API routes
+app.use('/api', routes);
+
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Route not found' 
-  });
-});
+app.use(notFoundHandler);
+
+// Global error handler
+app.use(errorHandler);
 
 // Start server
 const PORT = config.port;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`
+╔═══════════════════════════════════════════════════════╗
+║     Nalanda Library Management System API             ║
+╠═══════════════════════════════════════════════════════╣
+║  Server running on port: ${PORT}                          ║
+║  Health check: http://localhost:${PORT}/health            ║
+║  API Base URL: http://localhost:${PORT}/api               ║
+╚═══════════════════════════════════════════════════════╝
+  `);
 });
 
 module.exports = app;
