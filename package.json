@@ -1,0 +1,36 @@
+{
+  "name": "nalanda-library",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BharathChandra3681/Nalanda-Libray.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BharathChandra3681/Nalanda-Libray/issues"
+  },
+  "homepage": "https://github.com/BharathChandra3681/Nalanda-Libray#readme",
+  "description": "",
+  "dependencies": {
+    "@apollo/server": "^5.2.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "graphql": "^16.12.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
