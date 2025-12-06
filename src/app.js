@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express5');
 const connectDB = require('./config/db');
@@ -40,6 +43,10 @@ const startServer = async () => {
 
   // REST API routes
   app.use('/api', routes);
+
+  // Swagger API Documentation
+  const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   // Setup Apollo Server
   const apolloServer = new ApolloServer({
@@ -84,6 +91,7 @@ const startServer = async () => {
 ║  Server running on port: ${PORT}                               ║
 ║  Health check:    http://localhost:${PORT}/health              ║
 ║  REST API:        http://localhost:${PORT}/api                 ║
+║  API Docs:        http://localhost:${PORT}/api-docs            ║
 ║  GraphQL:         http://localhost:${PORT}/graphql             ║
 ╚════════════════════════════════════════════════════════════╝
     `);

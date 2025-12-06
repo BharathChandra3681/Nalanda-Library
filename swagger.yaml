@@ -26,11 +26,15 @@ info:
   license:
     name: ISC
 
+externalDocs:
+  description: GraphQL Playground
+  url: http://localhost:3000/graphql
+
 servers:
   - url: http://localhost:3000
     description: Development server
-  - url: http://localhost:5000
-    description: Alternative development server
+  # - url: https://api.nalandalibrary.com
+  #   description: Production server (AWS)
 
 tags:
   - name: Authentication
@@ -95,6 +99,7 @@ paths:
 
   /api/auth/register:
     post:
+      operationId: registerUser
       tags:
         - Authentication
       summary: Register a new user
@@ -142,6 +147,7 @@ paths:
 
   /api/auth/login:
     post:
+      operationId: loginUser
       tags:
         - Authentication
       summary: User login
@@ -175,6 +181,7 @@ paths:
 
   /api/auth/me:
     get:
+      operationId: getCurrentUserProfile
       tags:
         - Authentication
       summary: Get current user profile
@@ -193,6 +200,7 @@ paths:
 
   /api/auth/users:
     get:
+      operationId: getAllUsers
       tags:
         - Authentication
       summary: Get all users (Admin only)
@@ -309,6 +317,7 @@ paths:
 
   /api/books:
     get:
+      operationId: getAllBooks
       tags:
         - Books
       summary: Get all books
@@ -356,6 +365,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     post:
+      operationId: createBook
       tags:
         - Books
       summary: Add new book (Admin only)
@@ -420,6 +430,7 @@ paths:
 
   /api/books/{id}:
     get:
+      operationId: getBookById
       tags:
         - Books
       summary: Get book by ID
@@ -542,6 +553,7 @@ paths:
 
   /api/borrow:
     post:
+      operationId: borrowBook
       tags:
         - Borrowing
       summary: Borrow a book (Member only)
@@ -755,6 +767,7 @@ paths:
 
   /api/reports/most-borrowed:
     get:
+      operationId: getMostBorrowedBooks
       tags:
         - Reports
       summary: Most borrowed books report (Admin only)
