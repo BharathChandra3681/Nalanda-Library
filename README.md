@@ -427,6 +427,19 @@ ISC
 
 ## Docker Deployment
 
+### Quick Start
+
+```bash
+# Start the application with MongoDB
+docker-compose up --build -d
+
+# Verify containers are running
+docker ps
+
+# Test the API
+curl http://localhost:3000/health
+```
+
 ### Prerequisites
 - Docker (v20+)
 - Docker Compose (v2+)
