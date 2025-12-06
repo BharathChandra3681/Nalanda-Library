@@ -2,7 +2,7 @@
 
 A comprehensive backend system for library management built with Node.js, Express, MongoDB, and GraphQL.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 - **Runtime:** Node.js
 - **Framework:** Express.js
@@ -11,7 +11,7 @@ A comprehensive backend system for library management built with Node.js, Expres
 - **Authentication:** JWT with AES encryption
 - **Validation:** express-validator
 
-## 📋 Features
+## Features
 
 ### User Management
 - User registration and login
@@ -35,7 +35,7 @@ A comprehensive backend system for library management built with Node.js, Expres
 - Book availability summary
 - Genre distribution
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - Node.js (v18 or higher)
@@ -87,17 +87,17 @@ A comprehensive backend system for library management built with Node.js, Expres
    npm start
 ```
 
-## 📡 API Documentation
+## API Documentation
 
 ### Comprehensive Documentation Available
 
-📖 **REST API (OpenAPI/Swagger):**  [`swagger.yaml`](./swagger.yaml)
+**REST API (OpenAPI/Swagger):**  [`swagger.yaml`](./swagger.yaml)
 - Complete OpenAPI 3.0 specification
 - All endpoints with request/response examples
 - Authentication and authorization details
 - Error response formats
 
-📖 **GraphQL API:** [`GRAPHQL_API.md`](./GRAPHQL_API.md)
+**GraphQL API:** [`GRAPHQL_API.md`](./GRAPHQL_API.md)
 - Complete GraphQL documentation
 - All queries and mutations
 - Type definitions and schemas
@@ -260,7 +260,7 @@ query {
 }
 ```
 
-## 🔐 Authentication
+## Authentication
 
 All protected endpoints require a JWT token in the Authorization header:
 ```
@@ -273,7 +273,7 @@ The token is encrypted using AES encryption for additional security.
 - **Admin:** Full access to all operations
 - **Member:** Can browse books, borrow/return books, view own history
 
-## 📁 Project Structure
+## Project Structure
 ```
 nalanda-library-api/
 ├── src/
@@ -329,7 +329,7 @@ nalanda-library-api/
 └── CLAUDE.md              # Development guide for AI assistants
 ```
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### User
 ```javascript
@@ -371,7 +371,7 @@ nalanda-library-api/
 }
 ```
 
-## 🧪 Testing the API
+## Testing the API
 
 ### Using cURL
 ```bash
@@ -407,7 +407,7 @@ curl -X GET "http://localhost:3000/api/books?genre=fiction" \
 ```
 3. Run queries and mutations
 
-## 📝 Additional Notes
+## Additional Notes
 
 - Passwords are hashed using bcrypt with 12 salt rounds
 - JWT tokens are encrypted using AES for additional security
@@ -415,17 +415,17 @@ curl -X GET "http://localhost:3000/api/books?genre=fiction" \
 - Overdue status is automatically updated when checking borrowings
 - Books cannot be deleted if copies are currently borrowed
 
-## 👨‍💻 Author
+## Author
 
 Developed as part of Heumn Interactive Backend Developer Assessment
 
-## 📄 License
+## License
 
 ISC
 
 ---
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Prerequisites
 - Docker (v20+)
@@ -479,7 +479,7 @@ docker logs nalanda-api
 
 ---
 
-## ☁️ AWS Deployment
+## AWS Deployment
 
 For comprehensive AWS ECS deployment instructions, see **[AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md)**
 

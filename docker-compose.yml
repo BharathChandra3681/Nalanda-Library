@@ -1,9 +1,7 @@
 version: '3.8'
 
 services:
-  # ===========================================
   # MongoDB Database
-  # ===========================================
   mongodb:
     image: mongo:7
     container_name: nalanda-mongodb
@@ -23,9 +21,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # ===========================================
   # Nalanda API Application
-  # ===========================================
   api:
     build:
       context: .
@@ -53,16 +49,12 @@ services:
       retries: 3
       start_period: 10s
 
-# ===========================================
 # Networks
-# ===========================================
 networks:
   nalanda-network:
     driver: bridge
 
-# ===========================================
 # Volumes
-# ===========================================
 volumes:
   mongodb_data:
     driver: local

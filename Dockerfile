@@ -1,6 +1,4 @@
-# ============================================
 # Stage 1: Build stage
-# ============================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -11,9 +9,7 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --only=production
 
-# ============================================
 # Stage 2: Production stage
-# ============================================
 FROM node:20-alpine AS production
 
 # Add labels for better maintainability
