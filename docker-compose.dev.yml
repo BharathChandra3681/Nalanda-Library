@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: nalanda-mongodb-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_dev_data:/data/db
+    networks:
+      - nalanda-dev-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: nalanda-api-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/nalanda_library
+      - JWT_SECRET=dev_jwt_secret_key_nalanda
+      - JWT_ENCRYPTION_KEY=dev_aes_encryption_key_32ch
+      - JWT_EXPIRES_IN=7d
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+    networks:
+      - nalanda-dev-network
+
+networks:
+  nalanda-dev-network:
+    driver: bridge
+
+volumes:
+  mongodb_dev_data:

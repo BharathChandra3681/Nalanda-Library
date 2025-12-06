@@ -422,3 +422,97 @@ Developed as part of Heumn Interactive Backend Developer Assessment
 ## 📄 License
 
 ISC
+
+---
+
+## 🐳 Docker Deployment
+
+### Prerequisites
+- Docker (v20+)
+- Docker Compose (v2+)
+
+### Local Development with Docker
+
+```bash
+# Start with hot reload
+docker-compose -f docker-compose.dev.yml up --build
+
+# Stop containers
+docker-compose -f docker-compose.dev.yml down
+```
+
+### Production Build
+
+```bash
+# Build and start production containers
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f api
+
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (clears database)
+docker-compose down -v
+```
+
+### Docker Commands
+
+```bash
+# Build image only
+docker build -t nalanda-api:latest .
+
+# Run container standalone (requires external MongoDB)
+docker run -d \
+  --name nalanda-api \
+  -p 3000:3000 \
+  -e MONGODB_URI=mongodb://host.docker.internal:27017/nalanda_library \
+  -e JWT_SECRET=your_secret \
+  -e JWT_ENCRYPTION_KEY=your_32_char_key_here!! \
+  nalanda-api:latest
+
+# Check container health
+docker ps
+docker logs nalanda-api
+```
+
+---
+
+## ☁️ AWS Deployment
+
+For comprehensive AWS ECS deployment instructions, see **[AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md)**
+
+### Quick Start with AWS ECS
+
+1. **Push to ECR:**
+```bash
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-south-1.amazonaws.com
+docker build -t nalanda-api .
+docker tag nalanda-api:latest <account-id>.dkr.ecr.ap-south-1.amazonaws.com/nalanda-api:latest
+docker push <account-id>.dkr.ecr.ap-south-1.amazonaws.com/nalanda-api:latest
+```
+
+2. **Create ECS Cluster and Service:**
+```bash
+aws ecs create-cluster --cluster-name nalanda-cluster
+aws ecs register-task-definition --cli-input-json file://aws/task-definition.json
+aws ecs create-service \
+  --cluster nalanda-cluster \
+  --service-name nalanda-service \
+  --task-definition nalanda-api \
+  --desired-count 2 \
+  --launch-type FARGATE
+```
+
+### Production Checklist
+
+- [ ] Use MongoDB Atlas or AWS DocumentDB for database
+- [ ] Set strong JWT_SECRET (64+ characters)
+- [ ] Set strong JWT_ENCRYPTION_KEY (exactly 32 characters)
+- [ ] Enable HTTPS with SSL certificate
+- [ ] Set up CloudWatch for monitoring
+- [ ] Configure auto-scaling (for ECS/EB)
+- [ ] Set up CI/CD pipeline
+- [ ] Enable backup for database
+- [ ] Configure proper security groups
