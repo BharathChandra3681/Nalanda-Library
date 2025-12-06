@@ -62,11 +62,10 @@ bookSchema.virtual('isAvailable').get(function () {
 });
 
 // Validation: availableCopies should not exceed totalCopies
-bookSchema.pre('save', function (next) {
+bookSchema.pre('save', function () {
   if (this.availableCopies > this.totalCopies) {
     this.availableCopies = this.totalCopies;
   }
-  next();
 });
 
 module.exports = mongoose.model('Book', bookSchema);

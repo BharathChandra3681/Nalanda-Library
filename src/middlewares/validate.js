@@ -36,7 +36,9 @@ const registerValidation = [
   
   body('role')
     .optional()
-    .isIn(['admin', 'member']).withMessage('Role must be admin or member')
+    .isIn(['admin', 'member']).withMessage('Role must be admin or member'),
+  
+  handleValidationErrors
 ];
 
 // User login validation
@@ -48,13 +50,17 @@ const loginValidation = [
     .normalizeEmail(),
   
   body('password')
-    .notEmpty().withMessage('Password is required')
+    .notEmpty().withMessage('Password is required'),
+  
+  handleValidationErrors
 ];
 
 // MongoDB ObjectId validation
 const objectIdValidation = (paramName = 'id') => [
   param(paramName)
-    .isMongoId().withMessage(`Invalid ${paramName} format`)
+    .isMongoId().withMessage(`Invalid ${paramName} format`),
+  
+  handleValidationErrors
 ];
 
 // Pagination validation
@@ -67,7 +73,9 @@ const paginationValidation = [
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
-    .toInt()
+    .toInt(),
+  
+  handleValidationErrors
 ];
 
 // Book validation for creating a new book

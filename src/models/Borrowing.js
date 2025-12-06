@@ -42,13 +42,12 @@ borrowingSchema.index({ borrowDate: -1 });
 borrowingSchema.index({ dueDate: 1 });
 
 // Set default due date (14 days from borrow date)
-borrowingSchema.pre('save', function (next) {
+borrowingSchema.pre('save', function () {
   if (!this.dueDate) {
     const dueDate = new Date(this.borrowDate);
     dueDate.setDate(dueDate.getDate() + 14);
     this.dueDate = dueDate;
   }
-  next();
 });
 
 // Static method to check and update overdue status

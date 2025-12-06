@@ -52,7 +52,6 @@ router.get(
   authenticate,
   adminOnly,
   objectIdValidation('userId'),
-  paginationValidation,
   borrowController.getUserBorrowHistory
 );
 
