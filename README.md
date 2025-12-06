@@ -87,12 +87,27 @@ A comprehensive backend system for library management built with Node.js, Expres
    npm start
 ```
 
-## 📡 API Endpoints
+## 📡 API Documentation
+
+### Comprehensive Documentation Available
+
+📖 **REST API (OpenAPI/Swagger):**  [`swagger.yaml`](./swagger.yaml)
+- Complete OpenAPI 3.0 specification
+- All endpoints with request/response examples
+- Authentication and authorization details
+- Error response formats
+
+📖 **GraphQL API:** [`GRAPHQL_API.md`](./GRAPHQL_API.md)
+- Complete GraphQL documentation
+- All queries and mutations
+- Type definitions and schemas
+- Usage examples and best practices
 
 ### Base URLs
 - **REST API:** `http://localhost:3000/api`
 - **GraphQL:** `http://localhost:3000/graphql`
 - **Health Check:** `http://localhost:3000/health`
+- **API Info:** `http://localhost:3000/api` (GET - Returns endpoint overview)
 
 ### REST API Endpoints
 
@@ -308,7 +323,10 @@ nalanda-library-api/
 ├── .env.example
 ├── .gitignore
 ├── package.json
-└── README.md
+├── README.md
+├── swagger.yaml            # REST API Documentation (OpenAPI 3.0)
+├── GRAPHQL_API.md         # GraphQL API Documentation
+└── CLAUDE.md              # Development guide for AI assistants
 ```
 
 ## 🗄️ Database Schema
