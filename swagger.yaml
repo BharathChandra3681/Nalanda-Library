@@ -1,0 +1,1223 @@
+openapi: 3.0.3
+info:
+  title: Nalanda Library Management System API
+  description: |
+    A comprehensive library management system with both REST and GraphQL APIs.
+
+    ## Features
+    - User Management with role-based access control (Admin/Member)
+    - Book Management with search and filtering
+    - Borrowing System with automatic tracking
+    - Advanced Reports using MongoDB Aggregations
+    - JWT Authentication with AES Encryption
+
+    ## Authentication
+    All protected endpoints require a Bearer token in the Authorization header.
+    The JWT token is encrypted using AES encryption for enhanced security.
+
+    **Token Format**: `Authorization: Bearer <encrypted-jwt-token>`
+
+    ## GraphQL Endpoint
+    GraphQL API is available at `/graphql` with the same functionalities as REST API.
+  version: 1.0.0
+  contact:
+    name: Nalanda Library Team
+    email: admin@nalandalibrary.com
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: http://localhost:5000
+    description: Alternative development server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Books
+    description: Book management operations
+  - name: Borrowing
+    description: Book borrowing and return operations
+  - name: Reports
+    description: Analytics and reporting endpoints (Admin only)
+  - name: Health
+    description: System health check
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: Check if the API server is running
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  message:
+                    type: string
+                    example: Nalanda Library API is running
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                    example: development
+
+  /api:
+    get:
+      tags:
+        - Health
+      summary: API information
+      description: Get API version and available endpoints
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  version:
+                    type: string
+                  endpoints:
+                    type: object
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: John Doe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  pattern: '.*\d.*'
+                  example: password123
+                  description: Must be at least 6 characters and contain at least one number
+                role:
+                  type: string
+                  enum: [admin, member]
+                  default: member
+                  example: member
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive encrypted JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Retrieve authenticated user's profile information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/users:
+    get:
+      tags:
+        - Authentication
+      summary: Get all users (Admin only)
+      description: Retrieve list of all users with pagination
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/User'
+                          pagination:
+                            $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/auth/users/{id}/role:
+    patch:
+      tags:
+        - Authentication
+      summary: Update user role (Admin only)
+      description: Change a user's role between admin and member
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: User ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: [admin, member]
+                  example: admin
+      responses:
+        '200':
+          description: User role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/auth/users/{id}:
+    delete:
+      tags:
+        - Authentication
+      summary: Deactivate user (Admin only)
+      description: Deactivate a user account (cannot deactivate own account)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: User ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: User deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Cannot deactivate own account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/books:
+    get:
+      tags:
+        - Books
+      summary: Get all books
+      description: Retrieve list of books with pagination and filtering
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: genre
+          in: query
+          schema:
+            type: string
+          description: Filter by genre
+          example: fiction
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: Filter by author name
+          example: F. Scott Fitzgerald
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in title and author
+          example: gatsby
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Books
+      summary: Add new book (Admin only)
+      description: Create a new book in the library
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - author
+                - isbn
+                - totalCopies
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                  example: The Great Gatsby
+                author:
+                  type: string
+                  maxLength: 100
+                  example: F. Scott Fitzgerald
+                isbn:
+                  type: string
+                  example: '9780743273565'
+                publicationDate:
+                  type: string
+                  format: date
+                  example: '1925-04-10'
+                genre:
+                  type: string
+                  example: fiction
+                totalCopies:
+                  type: integer
+                  minimum: 0
+                  example: 5
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          book:
+                            $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/books/{id}:
+    get:
+      tags:
+        - Books
+      summary: Get book by ID
+      description: Retrieve details of a specific book
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: Book ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Book retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          book:
+                            $ref: '#/components/schemas/Book'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Books
+      summary: Update book (Admin only)
+      description: Update book details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: Book ID (MongoDB ObjectId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                author:
+                  type: string
+                  maxLength: 100
+                isbn:
+                  type: string
+                publicationDate:
+                  type: string
+                  format: date
+                genre:
+                  type: string
+                totalCopies:
+                  type: integer
+                  minimum: 0
+                availableCopies:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Books
+      summary: Delete book (Admin only)
+      description: Remove a book from the library
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: Book ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/borrow:
+    post:
+      tags:
+        - Borrowing
+      summary: Borrow a book (Member only)
+      description: Borrow an available book (creates borrowing record and decreases available copies)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bookId
+              properties:
+                bookId:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+                  example: 507f1f77bcf86cd799439011
+      responses:
+        '201':
+          description: Book borrowed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          borrowing:
+                            $ref: '#/components/schemas/Borrowing'
+        '400':
+          description: No copies available or already borrowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/borrow/return/{id}:
+    post:
+      tags:
+        - Borrowing
+      summary: Return a borrowed book (Member only)
+      description: Return a book and update borrowing status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: Borrowing ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Book returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Book already returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/borrow/history:
+    get:
+      tags:
+        - Borrowing
+      summary: Get own borrowing history
+      description: Retrieve current user's borrowing history with pagination
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Borrowing history retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Borrowing'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/borrow/current:
+    get:
+      tags:
+        - Borrowing
+      summary: Get currently borrowed books
+      description: Retrieve all books currently borrowed by the user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Currently borrowed books retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Borrowing'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/borrow/all:
+    get:
+      tags:
+        - Borrowing
+      summary: Get all borrowings (Admin only)
+      description: Retrieve all borrowing records with pagination
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: All borrowings retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Borrowing'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/borrow/history/{userId}:
+    get:
+      tags:
+        - Borrowing
+      summary: Get user's borrowing history (Admin only)
+      description: Retrieve borrowing history of a specific user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: User ID (MongoDB ObjectId)
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: User borrowing history retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Borrowing'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/reports/most-borrowed:
+    get:
+      tags:
+        - Reports
+      summary: Most borrowed books report (Admin only)
+      description: Get list of most borrowed books using MongoDB aggregation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of results to return
+      responses:
+        '200':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MostBorrowedBook'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/reports/active-members:
+    get:
+      tags:
+        - Reports
+      summary: Active members report (Admin only)
+      description: Get list of most active members based on borrowing history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of results to return
+      responses:
+        '200':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ActiveMember'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/reports/availability:
+    get:
+      tags:
+        - Reports
+      summary: Book availability summary (Admin only)
+      description: Get summary of total, available, and borrowed books
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Availability summary generated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AvailabilitySummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/reports/genre-distribution:
+    get:
+      tags:
+        - Reports
+      summary: Genre distribution report (Admin only)
+      description: Get distribution of books by genre
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Genre distribution retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GenreDistribution'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Enter the encrypted JWT token received from login/register.
+
+        The token is encrypted using AES encryption for enhanced security.
+        Format: `Bearer <encrypted-token>`
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+      description: Number of items per page
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        role:
+          type: string
+          enum: [admin, member]
+          example: member
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Book:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: The Great Gatsby
+        author:
+          type: string
+          example: F. Scott Fitzgerald
+        isbn:
+          type: string
+          example: '9780743273565'
+        publicationDate:
+          type: string
+          format: date
+          example: '1925-04-10'
+        genre:
+          type: string
+          example: fiction
+        totalCopies:
+          type: integer
+          example: 5
+        availableCopies:
+          type: integer
+          example: 3
+        isAvailable:
+          type: boolean
+          example: true
+        addedBy:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Borrowing:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        user:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/User'
+        book:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/Book'
+        borrowDate:
+          type: string
+          format: date-time
+        dueDate:
+          type: string
+          format: date-time
+        returnDate:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [borrowed, returned, overdue]
+          example: borrowed
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MostBorrowedBook:
+      type: object
+      properties:
+        bookId:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        isbn:
+          type: string
+        genre:
+          type: string
+        borrowCount:
+          type: integer
+          example: 42
+
+    ActiveMember:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        borrowCount:
+          type: integer
+          example: 15
+        lastBorrowed:
+          type: string
+          format: date-time
+
+    AvailabilitySummary:
+      type: object
+      properties:
+        books:
+          type: object
+          properties:
+            totalCopies:
+              type: integer
+              example: 150
+            availableCopies:
+              type: integer
+              example: 75
+            borrowedCopies:
+              type: integer
+              example: 75
+            uniqueTitles:
+              type: integer
+              example: 50
+        borrowings:
+          type: object
+          properties:
+            currentlyBorrowed:
+              type: integer
+              example: 45
+            overdue:
+              type: integer
+              example: 10
+            returned:
+              type: integer
+              example: 200
+            total:
+              type: integer
+              example: 255
+
+    GenreDistribution:
+      type: object
+      properties:
+        genre:
+          type: string
+          example: fiction
+        titleCount:
+          type: integer
+          example: 25
+        totalCopies:
+          type: integer
+          example: 75
+        availableCopies:
+          type: integer
+          example: 30
+
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 10
+        totalCount:
+          type: integer
+          example: 95
+        limit:
+          type: integer
+          example: 10
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPrevPage:
+          type: boolean
+          example: false
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation successful
+        data:
+          type: object
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User registered successfully
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            token:
+              type: string
+              example: U2FsdGVkX1/0Evb0cJFN/qXHlfTs99s1YeiwgrbV3Iy...
+              description: AES encrypted JWT token
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Error message
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Access denied. No token provided
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Access denied. Required role admin
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Resource not found
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Validation failed
+            errors:
+              - field: email
+                message: Please provide a valid email
+              - field: password
+                message: Password must be at least 6 characters
